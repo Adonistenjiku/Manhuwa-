@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>InkFlow — Manhwa Reader</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0a0a0f;--bg2:#111118;--bg3:#1a1a24;--surface:#1e1e2e;--surface2:#252535;
+  --accent:#c8a96e;--accent2:#e8c98e;--red:#e05555;--text:#f0ede8;--muted:#8a8a9a;--border:#2a2a3e;
+}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;overflow-x:hidden}
+::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:var(--bg2)}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+
+/* NAV */
+nav{position:sticky;top:0;z-index:100;background:rgba(10,10,15,0.95);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:0 2rem;display:flex;align-items:center;gap:1.5rem;height:60px}
+.logo{font-family:'Cinzel',serif;font-size:1.3rem;font-weight:700;color:var(--accent);letter-spacing:2px;cursor:pointer;flex-shrink:0;text-decoration:none}
+.logo span{color:var(--red)}
+.nav-links{display:flex;gap:4px;flex:1}
+.nav-links button{background:none;border:none;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:0.85rem;padding:6px 14px;border-radius:6px;cursor:pointer;transition:all 0.2s;letter-spacing:0.3px}
+.nav-links button:hover,.nav-links button.active{color:var(--text);background:var(--surface)}
+.upload-btn{margin-left:auto;background:var(--accent);color:#0a0a0f;border:none;font-family:'DM Sans',sans-serif;font-weight:500;font-size:0.82rem;padding:8px 20px;border-radius:6px;cursor:pointer;letter-spacing:0.5px;transition:all 0.2s;flex-shrink:0;white-space:nowrap}
+.upload-btn:hover{background:var(--accent2);transform:translateY(-1px)}
+
+/* HERO */
+.hero{padding:4rem 2rem 1.5rem;text-align:center;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;top:-80px;left:50%;transform:translateX(-50%);width:700px;height:350px;background:radial-gradient(ellipse,rgba(200,169,110,0.07) 0%,transparent 70%);pointer-events:none}
+.hero h1{font-family:'Cinzel',serif;font-size:clamp(1.8rem,4vw,3rem);font-weight:700;letter-spacing:3px;line-height:1.2}
+.hero h1 em{font-style:normal;color:var(--accent)}
+.hero p{color:var(--muted);margin:0.8rem auto 0;max-width:480px;font-size:0.88rem;line-height:1.7}
+.search-bar{max-width:480px;margin:1.5rem auto 0;position:relative}
+.search-bar input{width:100%;background:var(--surface);border:1px solid var(--border);color:var(--text);font-family:'DM Sans',sans-serif;font-size:0.88rem;padding:11px 44px 11px 16px;border-radius:8px;outline:none;transition:border 0.2s}
+.search-bar input::placeholder{color:var(--muted)}
+.search-bar input:focus{border-color:var(--accent)}
+.search-icon{position:absolute;right:14px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:1rem;pointer-events:none}
+
+/* GENRE PILLS */
+.genres{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:1.5rem 2rem 0;padding:0 1rem}
+.genre-pill{background:var(--surface);border:1px solid var(--border);color:var(--muted);font-size:0.75rem;padding:5px 14px;border-radius:20px;cursor:pointer;transition:all 0.2s;letter-spacing:0.4px;font-family:'DM Sans',sans-serif}
+.genre-pill:hover,.genre-pill.active{background:rgba(200,169,110,0.12);border-color:var(--accent);color:var(--accent)}
+
+/* STATS */
+.stats-bar{display:flex;border-top:1px solid var(--border);border-bottom:1px solid var(--border);background:var(--surface);margin:1.5rem 0 0}
+.stat-item{flex:1;padding:1rem;text-align:center;border-right:1px solid var(--border)}
+.stat-item:last-child{border-right:none}
+.stat-num{font-family:'Cinzel',serif;font-size:1.2rem;color:var(--accent)}
+.stat-label{font-size:0.68rem;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-top:2px}
+
+/* FEATURED */
+.featured-banner{margin:2rem auto;border-radius:14px;background:var(--surface);border:1px solid var(--border);overflow:hidden;display:flex;max-width:1160px;cursor:pointer;transition:border-color 0.2s}
+.featured-banner:hover{border-color:rgba(200,169,110,0.5)}
+.featured-art{width:160px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:5rem;background:linear-gradient(135deg,#1a1428,#1e1e2e)}
+.featured-body{padding:2rem;flex:1;display:flex;flex-direction:column;justify-content:center}
+.featured-tag{font-size:0.68rem;letter-spacing:1.5px;color:var(--accent);text-transform:uppercase;margin-bottom:8px}
+.featured-title{font-family:'Cinzel',serif;font-size:clamp(1.2rem,2.5vw,1.8rem);font-weight:600;line-height:1.2;margin-bottom:10px}
+.featured-desc{color:var(--muted);font-size:0.82rem;line-height:1.6;margin-bottom:1.2rem;max-width:500px}
+.featured-actions{display:flex;gap:10px;flex-wrap:wrap}
+
+/* SECTION */
+.section{padding:1.5rem 2rem;max-width:1200px;margin:0 auto}
+.section-header{display:flex;align-items:center;gap:12px;margin-bottom:1.2rem}
+.section-header h2{font-family:'Cinzel',serif;font-size:0.9rem;letter-spacing:2px;color:var(--accent);text-transform:uppercase;white-space:nowrap}
+.section-header .line{flex:1;height:1px;background:var(--border)}
+
+/* CARDS */
+.cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(145px,1fr));gap:16px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;cursor:pointer;transition:all 0.25s;position:relative}
+.card:hover{transform:translateY(-5px);border-color:rgba(200,169,110,0.4);box-shadow:0 14px 32px rgba(0,0,0,0.5)}
+.card-cover{width:100%;aspect-ratio:3/4;display:flex;align-items:center;justify-content:center;font-size:3.5rem;background:linear-gradient(135deg,var(--surface2),var(--bg3));position:relative;overflow:hidden}
+.card-cover img{width:100%;height:100%;object-fit:cover;position:absolute;inset:0}
+.card-badge{position:absolute;top:8px;left:8px;background:var(--red);color:#fff;font-size:0.6rem;font-weight:500;padding:2px 7px;border-radius:4px;letter-spacing:0.5px;z-index:1}
+.card-badge.gold{background:var(--accent);color:#0a0a0f}
+.card-info{padding:10px 10px 12px}
+.card-title{font-size:0.82rem;font-weight:500;line-height:1.3;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card-meta{font-size:0.7rem;color:var(--muted);display:flex;gap:6px;align-items:center}
+.stars{color:var(--accent)}
+
+/* H-SCROLL */
+.h-scroll{display:flex;gap:14px;overflow-x:auto;padding-bottom:8px;scrollbar-width:none}
+.h-scroll::-webkit-scrollbar{display:none}
+.h-card{flex:0 0 135px;background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;cursor:pointer;transition:all 0.2s}
+.h-card:hover{transform:translateY(-4px);border-color:rgba(200,169,110,0.4)}
+.h-card-cover{width:100%;aspect-ratio:3/4;display:flex;align-items:center;justify-content:center;font-size:2.5rem;background:linear-gradient(135deg,var(--surface2),var(--bg3));position:relative;overflow:hidden}
+.h-card-cover img{width:100%;height:100%;object-fit:cover;position:absolute;inset:0}
+.h-card-info{padding:8px}
+.h-card-title{font-size:0.78rem;font-weight:500;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.h-card-ch{font-size:0.68rem;color:var(--muted);margin-top:2px}
+
+/* BUTTONS */
+.btn-primary{background:var(--accent);color:#0a0a0f;border:none;font-family:'DM Sans',sans-serif;font-weight:500;font-size:0.82rem;padding:9px 22px;border-radius:7px;cursor:pointer;transition:all 0.2s}
+.btn-primary:hover{background:var(--accent2)}
+.btn-ghost{background:none;color:var(--muted);border:1px solid var(--border);font-family:'DM Sans',sans-serif;font-size:0.82rem;padding:9px 22px;border-radius:7px;cursor:pointer;transition:all 0.2s}
+.btn-ghost:hover{border-color:var(--accent);color:var(--text)}
+.btn-danger{background:none;color:var(--red);border:1px solid var(--red);font-family:'DM Sans',sans-serif;font-size:0.78rem;padding:6px 14px;border-radius:6px;cursor:pointer;transition:all 0.2s}
+.btn-danger:hover{background:var(--red);color:#fff}
+
+/* DETAIL VIEW */
+.view{display:none;position:fixed;inset:0;background:var(--bg);z-index:120;overflow-y:auto}
+.view.open{display:block}
+.view-back{display:flex;align-items:center;gap:8px;background:none;border:none;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:0.82rem;cursor:pointer;padding:1rem 2rem;transition:color 0.2s;position:sticky;top:0;background:rgba(10,10,15,0.95);z-index:10;backdrop-filter:blur(20px);border-bottom:1px solid var(--border);width:100%}
+.view-back:hover{color:var(--text)}
+.detail-hero{background:var(--surface);border-bottom:1px solid var(--border);padding:2rem;display:flex;gap:1.5rem;align-items:flex-start}
+.detail-cover{width:130px;flex-shrink:0;aspect-ratio:3/4;display:flex;align-items:center;justify-content:center;font-size:4rem;background:var(--surface2);border-radius:10px;border:1px solid var(--border);position:relative;overflow:hidden}
+.detail-cover img{width:100%;height:100%;object-fit:cover;position:absolute;inset:0}
+.detail-body h1{font-family:'Cinzel',serif;font-size:1.5rem;line-height:1.2;margin-bottom:8px}
+.d-meta{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.d-tag{font-size:0.72rem;padding:3px 10px;border-radius:4px;background:var(--surface2);color:var(--muted);border:1px solid var(--border)}
+.d-tag.gold{border-color:var(--accent);color:var(--accent)}
+.d-desc{color:var(--muted);font-size:0.85rem;line-height:1.6;max-width:560px;margin-bottom:1rem}
+.d-actions{display:flex;gap:10px;flex-wrap:wrap}
+.chapters-list{max-width:800px;margin:0 auto;padding:1.5rem 2rem}
+.chapters-list h2{font-family:'Cinzel',serif;font-size:0.9rem;letter-spacing:2px;color:var(--accent);text-transform:uppercase;margin-bottom:1rem}
+.ch-item{display:flex;align-items:center;gap:12px;padding:11px 14px;background:var(--surface);border:1px solid var(--border);border-radius:8px;margin-bottom:8px;cursor:pointer;transition:all 0.18s}
+.ch-item:hover{border-color:rgba(200,169,110,0.4);background:var(--surface2)}
+.ch-num{font-family:'Cinzel',serif;font-size:0.78rem;color:var(--accent);width:60px;flex-shrink:0}
+.ch-name{flex:1;font-size:0.85rem}
+.ch-date{font-size:0.72rem;color:var(--muted)}
+.ch-del{background:none;border:none;color:var(--muted);cursor:pointer;font-size:0.9rem;padding:4px 8px;border-radius:4px;transition:color 0.2s;flex-shrink:0}
+.ch-del:hover{color:var(--red)}
+
+/* READER */
+.reader-view{display:none;position:fixed;inset:0;background:#000;z-index:150;overflow-y:auto;flex-direction:column}
+.reader-view.open{display:flex}
+.reader-nav{position:sticky;top:0;background:rgba(0,0,0,0.95);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:0 1.5rem;height:52px;display:flex;align-items:center;gap:1rem;z-index:10;flex-shrink:0}
+.reader-nav .r-back{background:none;border:none;color:var(--muted);cursor:pointer;font-family:'DM Sans',sans-serif;font-size:0.82rem;display:flex;align-items:center;gap:6px;transition:color 0.2s;white-space:nowrap}
+.reader-nav .r-back:hover{color:var(--text)}
+.reader-nav .r-title{font-family:'Cinzel',serif;font-size:0.88rem;color:var(--accent);flex:1;text-align:center;letter-spacing:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.reader-nav select{background:var(--surface);border:1px solid var(--border);color:var(--text);font-family:'DM Sans',sans-serif;font-size:0.78rem;padding:5px 10px;border-radius:5px;outline:none;cursor:pointer;max-width:160px}
+.reader-pages{max-width:800px;margin:0 auto;padding:0.5rem 0 4rem;display:flex;flex-direction:column;gap:2px;width:100%}
+.reader-page{width:100%;background:#111;display:flex;align-items:center;justify-content:center;min-height:300px;position:relative}
+.reader-page img{width:100%;display:block}
+.page-num{position:absolute;bottom:6px;right:10px;font-size:0.6rem;color:rgba(255,255,255,0.15)}
+.placeholder-page{min-height:400px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:var(--muted)}
+.placeholder-page .p-emoji{font-size:2rem;opacity:0.4}
+.placeholder-page p{font-size:0.75rem;opacity:0.5}
+.reader-footer{text-align:center;padding:2rem 1rem 3rem;display:flex;gap:12px;justify-content:center;flex-shrink:0}
+
+/* UPLOAD MODAL */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:200;align-items:center;justify-content:center;padding:1rem}
+.modal-bg.open{display:flex}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:14px;width:100%;max-width:540px;padding:2rem;position:relative;max-height:92vh;overflow-y:auto}
+.modal h2{font-family:'Cinzel',serif;font-size:1.05rem;letter-spacing:2px;color:var(--accent);margin-bottom:1.5rem}
+.modal-close{position:absolute;top:1rem;right:1rem;background:none;border:none;color:var(--muted);font-size:1.3rem;cursor:pointer;line-height:1;transition:color 0.2s}
+.modal-close:hover{color:var(--text)}
+.form-group{margin-bottom:1.2rem}
+.form-group label{display:block;font-size:0.75rem;color:var(--muted);margin-bottom:6px;letter-spacing:0.5px;text-transform:uppercase}
+.form-group input,.form-group select,.form-group textarea{width:100%;background:var(--bg2);border:1px solid var(--border);color:var(--text);font-family:'DM Sans',sans-serif;font-size:0.88rem;padding:10px 13px;border-radius:8px;outline:none;transition:border 0.2s}
+.form-group input::placeholder,.form-group textarea::placeholder{color:var(--muted)}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--accent)}
+.form-group select{appearance:none;cursor:pointer}
+.form-group textarea{resize:vertical;min-height:80px;line-height:1.5}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.drop-zone{border:2px dashed var(--border);border-radius:10px;padding:2rem;text-align:center;cursor:pointer;transition:all 0.2s;position:relative}
+.drop-zone:hover,.drop-zone.dragover{border-color:var(--accent);background:rgba(200,169,110,0.04)}
+.dz-icon{font-size:2.5rem;margin-bottom:8px}
+.dz-text{color:var(--muted);font-size:0.82rem;line-height:1.6}
+.dz-input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.file-list{margin-top:10px;text-align:left;max-height:120px;overflow-y:auto}
+.file-item{font-size:0.73rem;color:var(--accent);padding:2px 0;display:flex;align-items:center;gap:4px}
+.cover-preview{width:70px;height:90px;border-radius:6px;object-fit:cover;border:1px solid var(--border);margin-top:8px}
+.submit-btn{width:100%;background:var(--accent);color:#0a0a0f;border:none;font-family:'DM Sans',sans-serif;font-weight:500;font-size:0.88rem;padding:12px;border-radius:8px;cursor:pointer;transition:all 0.2s;margin-top:0.5rem;letter-spacing:0.5px}
+.submit-btn:hover{background:var(--accent2)}
+.progress-bar{height:3px;background:var(--border);border-radius:2px;margin-top:8px;overflow:hidden;display:none}
+.progress-fill{height:100%;background:var(--accent);border-radius:2px;transition:width 0.3s;width:0}
+
+/* CONFIRM MODAL */
+.confirm-modal{background:var(--surface);border:1px solid var(--border);border-radius:12px;width:100%;max-width:380px;padding:1.5rem;text-align:center}
+.confirm-modal h3{font-family:'Cinzel',serif;font-size:1rem;color:var(--text);margin-bottom:10px}
+.confirm-modal p{color:var(--muted);font-size:0.82rem;line-height:1.5;margin-bottom:1.2rem}
+.confirm-actions{display:flex;gap:10px;justify-content:center}
+
+/* TOAST */
+.toast{position:fixed;bottom:2rem;left:50%;transform:translateX(-50%) translateY(100px);background:var(--surface2);border:1px solid var(--accent);color:var(--text);font-size:0.82rem;padding:10px 22px;border-radius:8px;z-index:500;transition:transform 0.3s;white-space:nowrap;pointer-events:none}
+.toast.show{transform:translateX(-50%) translateY(0)}
+
+/* EMPTY */
+.empty{text-align:center;padding:4rem 2rem;color:var(--muted)}
+.empty .e-icon{font-size:3rem;margin-bottom:1rem;opacity:0.3}
+.empty p{font-size:0.85rem;line-height:1.7}
+
+/* RESPONSIVE */
+@media(max-width:600px){
+  nav{padding:0 1rem;gap:0.75rem}
+  .nav-links button{font-size:0.75rem;padding:5px 8px}
+  .upload-btn{font-size:0.75rem;padding:7px 12px}
+  .featured-art{width:100px;font-size:3rem}
+  .cards-grid{grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:12px}
+  .detail-hero{flex-direction:column}
+  .form-row{grid-template-columns:1fr}
+  .section{padding:1rem}
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="logo" onclick="showPage('home')">INK<span>FLOW</span></div>
+  <div class="nav-links">
+    <button class="active" onclick="goPage('home',this)">Home</button>
+    <button onclick="goPage('browse',this)">Browse</button>
+    <button onclick="goPage('new',this)">New</button>
+    <button onclick="goPage('popular',this)">Popular</button>
+  </div>
+  <button class="upload-btn" onclick="openUpload()">+ Upload</button>
+</nav>
+
+<!-- HOME PAGE -->
+<div id="page-home">
+  <div class="hero">
+    <h1>Read <em>Manhwa</em><br>Like Never Before</h1>
+    <p>Upload, share, and read manhwa — beautifully presented, endlessly enjoyable.</p>
+    <div class="search-bar">
+      <input type="text" id="search-input" placeholder="Search titles, genres, authors…" oninput="doSearch(this.value)">
+      <span class="search-icon">⌕</span>
+    </div>
+  </div>
+
+  <div class="genres" id="genre-pills-home"></div>
+
+  <div class="stats-bar">
+    <div class="stat-item"><div class="stat-num" id="stat-titles">0</div><div class="stat-label">Titles</div></div>
+    <div class="stat-item"><div class="stat-num" id="stat-chapters">0</div><div class="stat-label">Chapters</div></div>
+    <div class="stat-item"><div class="stat-num">∞</div><div class="stat-label">Free to Read</div></div>
+    <div class="stat-item"><div class="stat-num">24/7</div><div class="stat-label">Available</div></div>
+  </div>
+
+  <div style="max-width:1160px;margin:0 auto;padding:0 2rem" id="featured-wrap"></div>
+
+  <div class="section" id="hot-section">
+    <div class="section-header"><h2>Trending Now</h2><div class="line"></div></div>
+    <div class="cards-grid" id="hot-grid"></div>
+  </div>
+
+  <div class="section" id="recent-section">
+    <div class="section-header"><h2>Recently Added</h2><div class="line"></div></div>
+    <div class="h-scroll" id="recent-scroll"></div>
+  </div>
+
+  <div class="section">
+    <div class="section-header"><h2>All Titles</h2><div class="line"></div></div>
+    <div class="cards-grid" id="all-grid"></div>
+  </div>
+</div>
+
+<!-- BROWSE PAGE -->
+<div id="page-browse" style="display:none">
+  <div class="section">
+    <div class="section-header"><h2>Browse</h2><div class="line"></div></div>
+    <div class="genres" id="genre-pills-browse" style="margin:0 0 1.5rem;justify-content:flex-start;padding:0"></div>
+    <div class="cards-grid" id="browse-grid"></div>
+  </div>
+</div>
+
+<!-- NEW PAGE -->
+<div id="page-new" style="display:none">
+  <div class="section">
+    <div class="section-header"><h2>New Releases</h2><div class="line"></div></div>
+    <div class="cards-grid" id="new-page-grid"></div>
+  </div>
+</div>
+
+<!-- POPULAR PAGE -->
+<div id="page-popular" style="display:none">
+  <div class="section">
+    <div class="section-header"><h2>Most Popular</h2><div class="line"></div></div>
+    <div class="cards-grid" id="popular-grid"></div>
+  </div>
+</div>
+
+<!-- DETAIL VIEW -->
+<div class="view" id="detail-view">
+  <button class="view-back" onclick="closeDetail()">← Back</button>
+  <div id="detail-content"></div>
+</div>
+
+<!-- READER VIEW -->
+<div class="reader-view" id="reader-view">
+  <div class="reader-nav">
+    <button class="r-back" onclick="closeReader()">← Back</button>
+    <div class="r-title" id="r-title-text">Title</div>
+    <select id="chapter-select" onchange="loadChapterIdx(this.value)"></select>
+  </div>
+  <div class="reader-pages" id="reader-pages"></div>
+  <div class="reader-footer">
+    <button class="btn-ghost" id="prev-ch-btn" onclick="prevChapter()">← Prev Chapter</button>
+    <button class="btn-primary" id="next-ch-btn" onclick="nextChapter()">Next Chapter →</button>
+  </div>
+</div>
+
+<!-- UPLOAD MODAL -->
+<div class="modal-bg" id="upload-modal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeUpload()">✕</button>
+    <h2>UPLOAD MANHWA</h2>
+
+    <div class="form-group">
+      <label>Title *</label>
+      <input type="text" id="u-title" placeholder="Enter manhwa title" list="existing-titles">
+      <datalist id="existing-titles"></datalist>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label>Genre</label>
+        <select id="u-genre">
+          <option>Action</option><option>Romance</option><option>Fantasy</option>
+          <option>Horror</option><option>Slice of Life</option><option>Thriller</option>
+          <option>Comedy</option><option>Isekai</option><option>System</option><option>Cultivation</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Chapter No. *</label>
+        <input type="number" id="u-chapter" placeholder="e.g. 1" min="1" value="1">
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Chapter Name</label>
+      <input type="text" id="u-chname" placeholder="e.g. Awakening">
+    </div>
+
+    <div class="form-group">
+      <label>Description</label>
+      <textarea id="u-desc" placeholder="Brief synopsis of the story…"></textarea>
+    </div>
+
+    <div class="form-group">
+      <label>Cover Image (optional)</label>
+      <div style="position:relative;display:inline-block">
+        <input type="file" id="u-cover" accept="image/*" onchange="handleCover(this)" style="font-size:0.8rem;color:var(--muted)">
+      </div>
+      <img id="cover-preview" class="cover-preview" style="display:none">
+    </div>
+
+    <div class="form-group">
+      <label>Emoji Icon (if no cover)</label>
+      <input type="text" id="u-emoji" placeholder="e.g. ⚔️ 🌸 👁 🔥" maxlength="4">
+    </div>
+
+    <div class="form-group">
+      <label>Chapter Pages (Images) *</label>
+      <div class="drop-zone" id="drop-zone">
+        <div class="dz-icon">📂</div>
+        <p class="dz-text">Drop image files here or click to select<br><small style="opacity:0.6">PNG, JPG, WEBP · multiple files supported</small></p>
+        <input class="dz-input" type="file" id="u-files" accept="image/*" multiple onchange="handlePages(this.files)">
+        <div class="file-list" id="file-list"></div>
+      </div>
+      <div class="progress-bar" id="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+    </div>
+
+    <button class="submit-btn" id="submit-btn" onclick="submitUpload()">📤 Publish Chapter</button>
+  </div>
+</div>
+
+<!-- CONFIRM MODAL -->
+<div class="modal-bg" id="confirm-modal">
+  <div class="confirm-modal">
+    <h3>Delete Chapter?</h3>
+    <p id="confirm-msg">This action cannot be undone.</p>
+    <div class="confirm-actions">
+      <button class="btn-ghost" onclick="closeConfirm()">Cancel</button>
+      <button class="btn-danger" onclick="confirmDelete()">Delete</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ─── DATA ────────────────────────────────────────────────────────────────────
+const EMOJIS=['⚔️','🌸','👁️','🔥','🌑','💀','🐉','🗡️','👺','🌊','⛩️','🌙','💫','🩸','🔮','🦊','☯️','🌺','⚡','🧿'];
+const GENRES=['All','Action','Romance','Fantasy','Horror','Slice of Life','Thriller','Comedy','Isekai','System','Cultivation'];
+const STORE_KEY='inkflow_library_v2';
+
+const DEFAULT_LIBRARY=[
+  {id:1,title:'Shadow Monarch',genre:'Fantasy',emoji:'👁️',cover:null,desc:'A dungeon hunter awakens a mysterious power that lets him command the dead. Feared by all, he walks alone.',chapters:[{num:1,name:'Awakening',pages:[],date:'2025-01-10'},{num:2,name:'First Command',pages:[],date:'2025-01-17'},{num:3,name:'The Shadow Army',pages:[],date:'2025-01-24'}],views:48200,rating:4.9,isNew:false,isHot:true},
+  {id:2,title:'Petal Storm',genre:'Romance',emoji:'🌸',cover:null,desc:'A cold CEO falls for the florist who delivers mystery bouquets to his penthouse every Monday.',chapters:[{num:1,name:'First Bloom',pages:[],date:'2025-02-05'},{num:2,name:'Thorns',pages:[],date:'2025-02-12'}],views:31500,rating:4.7,isNew:true,isHot:false},
+  {id:3,title:'Crimson Gate',genre:'Action',emoji:'🗡️',cover:null,desc:'Warriors from rival clans must unite to seal the gate that bleeds darkness into the mortal realm.',chapters:[{num:1,name:'The Bleeding Sky',pages:[],date:'2025-01-01'},{num:2,name:'Rival Blades',pages:[],date:'2025-01-08'},{num:3,name:'Pact',pages:[],date:'2025-01-15'},{num:4,name:'The Gate',pages:[],date:'2025-01-22'}],views:62100,rating:4.8,isNew:false,isHot:true},
+  {id:4,title:'Null System',genre:'System',emoji:'💻',cover:null,desc:'When the world becomes an RPG, one player has no class — and that turns out to mean infinite potential.',chapters:[{num:1,name:'Login',pages:[],date:'2025-02-20'},{num:2,name:'Unclassed',pages:[],date:'2025-02-27'}],views:21000,rating:4.5,isNew:true,isHot:false},
+  {id:5,title:'Jade Dragon',genre:'Cultivation',emoji:'🐉',cover:null,desc:'Born with a crippled meridian, she cultivates a path no master has walked — and rewrites the heavens.',chapters:[{num:1,name:'The Broken Root',pages:[],date:'2024-12-15'},{num:2,name:'Jade Pills',pages:[],date:'2024-12-22'},{num:3,name:'First Realm',pages:[],date:'2024-12-29'}],views:38900,rating:4.6,isNew:false,isHot:false},
+  {id:6,title:'Hollow City',genre:'Horror',emoji:'💀',cover:null,desc:'Every night at 3am the city resets and the dead walk again. Only she remembers.',chapters:[{num:1,name:'3:00 AM',pages:[],date:'2025-03-01'},{num:2,name:'Loop',pages:[],date:'2025-03-08'}],views:17200,rating:4.4,isNew:true,isHot:false},
+];
+
+let library=[];
+let filterGenre='All';
+let currentManhwa=null;
+let currentChIdx=0;
+let uploadedPages=[];
+let uploadedCoverData=null;
+let pendingDelete=null;
+
+// ─── STORAGE ─────────────────────────────────────────────────────────────────
+function saveLibrary(){
+  try{localStorage.setItem(STORE_KEY,JSON.stringify(library));}catch(e){console.warn('Storage full',e);}
+}
+function loadLibrary(){
+  try{
+    const d=localStorage.getItem(STORE_KEY);
+    if(d){library=JSON.parse(d);return;}
+  }catch(e){}
+  library=JSON.parse(JSON.stringify(DEFAULT_LIBRARY));
+  saveLibrary();
+}
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+function init(){
+  loadLibrary();
+  renderGenrePills('genre-pills-home','filterHome');
+  renderGenrePills('genre-pills-browse','filterBrowse');
+  renderHome();
+  updateStats();
+}
+
+function updateStats(){
+  document.getElementById('stat-titles').textContent=library.length;
+  document.getElementById('stat-chapters').textContent=library.reduce((a,b)=>a+b.chapters.length,0);
+}
+
+// ─── GENRE PILLS ─────────────────────────────────────────────────────────────
+function renderGenrePills(containerId,fnName){
+  const c=document.getElementById(containerId);
+  if(!c)return;
+  c.innerHTML=GENRES.map(g=>`<button class="genre-pill${g===filterGenre?' active':''}" onclick="${fnName}('${g}',this)">${g}</button>`).join('');
+}
+function filterHome(g,el){
+  filterGenre=g;
+  document.querySelectorAll('#genre-pills-home .genre-pill').forEach(x=>x.classList.remove('active'));
+  el.classList.add('active');
+  renderHome();
+}
+function filterBrowse(g,el){
+  filterGenre=g;
+  document.querySelectorAll('#genre-pills-browse .genre-pill').forEach(x=>x.classList.remove('active'));
+  el.classList.add('active');
+  renderBrowsePage();
+}
+
+function getFiltered(){return filterGenre==='All'?library:library.filter(m=>m.genre===filterGenre);}
+
+// ─── SEARCH ───────────────────────────────────────────────────────────────────
+function doSearch(q){
+  const grid=document.getElementById('all-grid');
+  if(!q.trim()){renderGrid(grid,getFiltered());return;}
+  const r=library.filter(m=>
+    m.title.toLowerCase().includes(q.toLowerCase())||
+    m.genre.toLowerCase().includes(q.toLowerCase())||
+    m.desc.toLowerCase().includes(q.toLowerCase())
+  );
+  renderGrid(grid,r);
+  document.getElementById('all-grid').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+// ─── RENDER HOME ──────────────────────────────────────────────────────────────
+function renderHome(){
+  const list=getFiltered();
+  renderFeatured(list);
+  renderGrid(document.getElementById('hot-grid'),list.filter(m=>m.isHot).slice(0,6));
+  renderHScroll(document.getElementById('recent-scroll'),[...library].reverse().slice(0,10));
+  renderGrid(document.getElementById('all-grid'),list);
+}
+
+function renderFeatured(list){
+  const fw=document.getElementById('featured-wrap');
+  const f=list.find(m=>m.isHot)||list[0];
+  if(!f){fw.innerHTML='';return;}
+  fw.innerHTML=`<div class="featured-banner" onclick="openDetail(${f.id})">
+    <div class="featured-art">${f.cover?`<img src="${f.cover}" style="width:100%;height:100%;object-fit:cover">`:`${f.emoji}`}</div>
+    <div class="featured-body">
+      <div class="featured-tag">★ Featured Title</div>
+      <div class="featured-title">${f.title}</div>
+      <div class="featured-desc">${f.desc}</div>
+      <div class="featured-actions">
+        <button class="btn-primary" onclick="event.stopPropagation();openReader(${f.id},0)">▶ Read Now</button>
+        <button class="btn-ghost" onclick="event.stopPropagation();openDetail(${f.id})">Details</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ─── GRIDS ────────────────────────────────────────────────────────────────────
+function renderGrid(el,items){
+  if(!el)return;
+  if(!items.length){
+    el.innerHTML=`<div class="empty"><div class="e-icon">📚</div><p>No titles found.<br>Upload one to get started!</p></div>`;
+    return;
+  }
+  el.innerHTML=items.map(cardHTML).join('');
+}
+
+function renderHScroll(el,items){
+  if(!el)return;
+  if(!items.length){el.innerHTML=`<div style="color:var(--muted);font-size:0.82rem;padding:1rem 0">Nothing yet.</div>`;return;}
+  el.innerHTML=items.map(m=>`
+    <div class="h-card" onclick="openDetail(${m.id})">
+      <div class="h-card-cover">${m.cover?`<img src="${m.cover}">`:''}${m.emoji||''}</div>
+      <div class="h-card-info">
+        <div class="h-card-title">${m.title}</div>
+        <div class="h-card-ch">${m.chapters.length} ch · ${m.genre}</div>
+      </div>
+    </div>`).join('');
+}
+
+function cardHTML(m){
+  return `<div class="card" onclick="openDetail(${m.id})">
+    <div class="card-cover">
+      ${m.cover?`<img src="${m.cover}">`:''}
+      <span style="${m.cover?'display:none':''}">${m.emoji||'📖'}</span>
+      ${m.isHot?`<div class="card-badge">HOT</div>`:''}
+      ${m.isNew?`<div class="card-badge gold">NEW</div>`:''}
+    </div>
+    <div class="card-info">
+      <div class="card-title">${m.title}</div>
+      <div class="card-meta"><span class="stars">★</span>${m.rating} · ${m.chapters.length} ch</div>
+    </div>
+  </div>`;
+}
+
+// ─── PAGE NAVIGATION ──────────────────────────────────────────────────────────
+const PAGES=['home','browse','new','popular'];
+function showPage(p){
+  PAGES.forEach(x=>document.getElementById('page-'+x).style.display=x===p?'block':'none');
+}
+function goPage(p,el){
+  showPage(p);
+  document.querySelectorAll('.nav-links button').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  filterGenre='All';
+  if(p==='browse'){renderGenrePills('genre-pills-browse','filterBrowse');renderBrowsePage();}
+  else if(p==='new'){renderGrid(document.getElementById('new-page-grid'),[...library].filter(m=>m.isNew));}
+  else if(p==='popular'){renderGrid(document.getElementById('popular-grid'),[...library].sort((a,b)=>b.views-a.views));}
+  else{renderGenrePills('genre-pills-home','filterHome');renderHome();}
+}
+function renderBrowsePage(){
+  renderGrid(document.getElementById('browse-grid'),getFiltered());
+}
+
+// ─── DETAIL VIEW ──────────────────────────────────────────────────────────────
+function openDetail(id){
+  currentManhwa=library.find(m=>m.id===id);
+  if(!currentManhwa)return;
+  const m=currentManhwa;
+  m.views=(m.views||0)+1;
+  saveLibrary();
+  document.getElementById('detail-content').innerHTML=`
+    <div class="detail-hero">
+      <div class="detail-cover">${m.cover?`<img src="${m.cover}">`:''}${m.emoji||'📖'}</div>
+      <div class="detail-body">
+        <h1>${m.title}</h1>
+        <div class="d-meta">
+          <span class="d-tag gold">${m.genre}</span>
+          <span class="d-tag">⭐ ${m.rating}</span>
+          <span class="d-tag">${m.chapters.length} Chapters</span>
+          <span class="d-tag">${fmtViews(m.views)} Views</span>
+        </div>
+        <div class="d-desc">${m.desc}</div>
+        <div class="d-actions">
+          <button class="btn-primary" onclick="openReader(${m.id},0)">▶ Read Ch.1</button>
+          <button class="btn-ghost" onclick="openReader(${m.id},${m.chapters.length-1})">Latest Chapter</button>
+          <button class="btn-danger" onclick="askDeleteManhwa(${m.id})">Delete Title</button>
+        </div>
+      </div>
+    </div>
+    <div class="chapters-list">
+      <h2>Chapters</h2>
+      ${m.chapters.map((ch,i)=>`
+        <div class="ch-item">
+          <div class="ch-num" onclick="openReader(${m.id},${i})">Ch.${ch.num}</div>
+          <div class="ch-name" onclick="openReader(${m.id},${i})">${ch.name}</div>
+          <div class="ch-date">${ch.date}</div>
+          <button class="ch-del" title="Delete chapter" onclick="askDeleteChapter(${m.id},${i})">✕</button>
+        </div>`).join('')}
+    </div>`;
+  document.getElementById('detail-view').classList.add('open');
+  document.getElementById('detail-view').scrollTop=0;
+}
+function closeDetail(){document.getElementById('detail-view').classList.remove('open');}
+function fmtViews(v){return v>=1000?(v/1000).toFixed(1)+'k':v;}
+
+// ─── READER ───────────────────────────────────────────────────────────────────
+function openReader(id,chIdx){
+  const m=library.find(x=>x.id===id);
+  if(!m)return;
+  currentManhwa=m;
+  currentChIdx=chIdx;
+  document.getElementById('r-title-text').textContent=m.title;
+  const sel=document.getElementById('chapter-select');
+  sel.innerHTML=m.chapters.map((ch,i)=>`<option value="${i}"${i===chIdx?' selected':''}>Ch.${ch.num}: ${ch.name}</option>`).join('');
+  document.getElementById('reader-view').classList.add('open');
+  document.getElementById('reader-view').scrollTop=0;
+  renderReaderPages();
+}
+function renderReaderPages(){
+  const m=currentManhwa;
+  const ch=m.chapters[currentChIdx];
+  const container=document.getElementById('reader-pages');
+  document.getElementById('chapter-select').value=currentChIdx;
+  document.getElementById('prev-ch-btn').style.opacity=currentChIdx===0?'0.3':'1';
+  document.getElementById('next-ch-btn').style.opacity=currentChIdx>=m.chapters.length-1?'0.3':'1';
+  if(ch.pages&&ch.pages.length>0){
+    container.innerHTML=ch.pages.map((src,i)=>`
+      <div class="reader-page">
+        <img src="${src}" alt="Page ${i+1}" loading="lazy">
+        <div class="page-num">${i+1} / ${ch.pages.length}</div>
+      </div>`).join('');
+  } else {
+    container.innerHTML=Array.from({length:6},(_,i)=>`
+      <div class="reader-page">
+        <div class="placeholder-page">
+          <div class="p-emoji">${m.emoji||'📖'}</div>
+          <p>Page ${i+1} — ${ch.name}</p>
+          <p style="margin-top:4px;font-size:0.65rem">Upload images to see pages here</p>
+        </div>
+        <div class="page-num">${i+1}</div>
+      </div>`).join('');
+  }
+}
+function loadChapterIdx(idx){currentChIdx=parseInt(idx);document.getElementById('reader-view').scrollTop=0;renderReaderPages();}
+function prevChapter(){if(currentChIdx>0){currentChIdx--;document.getElementById('reader-view').scrollTop=0;renderReaderPages();}}
+function nextChapter(){if(currentManhwa&&currentChIdx<currentManhwa.chapters.length-1){currentChIdx++;document.getElementById('reader-view').scrollTop=0;renderReaderPages();}}
+function closeReader(){document.getElementById('reader-view').classList.remove('open');}
+
+// ─── UPLOAD ───────────────────────────────────────────────────────────────────
+function openUpload(){
+  uploadedPages=[];uploadedCoverData=null;
+  ['u-title','u-chname','u-desc','u-emoji'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('u-chapter').value='1';
+  document.getElementById('file-list').innerHTML='';
+  document.getElementById('cover-preview').style.display='none';
+  document.getElementById('progress-bar').style.display='none';
+  document.getElementById('progress-fill').style.width='0';
+  // populate datalist with existing titles
+  document.getElementById('existing-titles').innerHTML=library.map(m=>`<option value="${m.title}">`).join('');
+  document.getElementById('upload-modal').classList.add('open');
+}
+function closeUpload(){document.getElementById('upload-modal').classList.remove('open');}
+
+function handleCover(input){
+  const f=input.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=e=>{
+    uploadedCoverData=e.target.result;
+    const prev=document.getElementById('cover-preview');
+    prev.src=uploadedCoverData;prev.style.display='block';
+  };
+  r.readAsDataURL(f);
+}
+
+function handlePages(files){
+  uploadedPages=Array.from(files);
+  const fl=document.getElementById('file-list');
+  fl.innerHTML=uploadedPages.map(f=>`<div class="file-item">✓ ${f.name}</div>`).join('');
+}
+
+async function submitUpload(){
+  const title=document.getElementById('u-title').value.trim();
+  if(!title){showToast('⚠ Please enter a title');return;}
+  if(!uploadedPages.length){showToast('⚠ Please select chapter pages');return;}
+
+  const btn=document.getElementById('submit-btn');
+  btn.textContent='Processing…';btn.disabled=true;
+
+  const pb=document.getElementById('progress-bar');
+  const pf=document.getElementById('progress-fill');
+  pb.style.display='block';
+
+  const genre=document.getElementById('u-genre').value;
+  const chNum=parseInt(document.getElementById('u-chapter').value)||1;
+  const chName=document.getElementById('u-chname').value.trim()||`Chapter ${chNum}`;
+  const desc=document.getElementById('u-desc').value.trim()||'An exciting new story.';
+  const emojiInput=document.getElementById('u-emoji').value.trim();
+  const emoji=emojiInput||EMOJIS[Math.floor(Math.random()*EMOJIS.length)];
+  const today=new Date().toISOString().split('T')[0];
+
+  // read pages with progress
+  const pages=[];
+  for(let i=0;i<uploadedPages.length;i++){
+    const data=await readFile(uploadedPages[i]);
+    pages.push(data);
+    pf.style.width=Math.round(((i+1)/uploadedPages.length)*100)+'%';
+  }
+
+  const existing=library.find(m=>m.title.toLowerCase()===title.toLowerCase());
+  if(existing){
+    const dupCh=existing.chapters.find(c=>c.num===chNum);
+    if(dupCh){
+      // overwrite
+      dupCh.pages=pages;dupCh.name=chName;dupCh.date=today;
+      showToast(`✓ Chapter ${chNum} updated!`);
+    } else {
+      existing.chapters.push({num:chNum,name:chName,pages,date:today});
+      existing.chapters.sort((a,b)=>a.num-b.num);
+      showToast(`✓ Chapter ${chNum} added to "${title}"!`);
+    }
+    existing.isNew=true;
+    if(uploadedCoverData)existing.cover=uploadedCoverData;
+  } else {
+    const newId=library.length?Math.max(...library.map(m=>m.id))+1:1;
+    library.unshift({id:newId,title,genre,emoji,cover:uploadedCoverData||null,desc,chapters:[{num:chNum,name:chName,pages,date:today}],views:0,rating:5.0,isNew:true,isHot:false});
+    showToast(`✓ "${title}" published!`);
+  }
+
+  saveLibrary();
+  updateStats();
+  renderHome();
+  closeUpload();
+  btn.textContent='📤 Publish Chapter';btn.disabled=false;
+}
+
+function readFile(f){
+  return new Promise(res=>{
+    const r=new FileReader();
+    r.onload=e=>res(e.target.result);
+    r.readAsDataURL(f);
+  });
+}
+
+// ─── DELETE ───────────────────────────────────────────────────────────────────
+function askDeleteManhwa(id){
+  pendingDelete={type:'manhwa',id};
+  document.getElementById('confirm-msg').textContent=`Delete the entire manhwa and all its chapters? This cannot be undone.`;
+  document.getElementById('confirm-modal').classList.add('open');
+}
+function askDeleteChapter(manhwaId,chIdx){
+  pendingDelete={type:'chapter',manhwaId,chIdx};
+  const m=library.find(x=>x.id===manhwaId);
+  const ch=m?m.chapters[chIdx]:null;
+  document.getElementById('confirm-msg').textContent=`Delete "${ch?ch.name:'this chapter'}"? This cannot be undone.`;
+  document.getElementById('confirm-modal').classList.add('open');
+}
+function closeConfirm(){pendingDelete=null;document.getElementById('confirm-modal').classList.remove('open');}
+function confirmDelete(){
+  if(!pendingDelete){closeConfirm();return;}
+  if(pendingDelete.type==='manhwa'){
+    library=library.filter(m=>m.id!==pendingDelete.id);
+    closeDetail();
+    showToast('Title deleted');
+  } else {
+    const m=library.find(x=>x.id===pendingDelete.manhwaId);
+    if(m){
+      m.chapters.splice(pendingDelete.chIdx,1);
+      if(m.chapters.length===0){library=library.filter(x=>x.id!==m.id);closeDetail();}
+      else{openDetail(m.id);}
+      showToast('Chapter deleted');
+    }
+  }
+  saveLibrary();updateStats();renderHome();
+  closeConfirm();
+}
+
+// ─── DRAG & DROP ─────────────────────────────────────────────────────────────
+const dz=document.getElementById('drop-zone');
+dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('dragover');});
+dz.addEventListener('dragleave',()=>dz.classList.remove('dragover'));
+dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('dragover');handlePages(e.dataTransfer.files);});
+
+// ─── TOAST ────────────────────────────────────────────────────────────────────
+let toastTimer;
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>t.classList.remove('show'),3000);
+}
+
+// ─── KEYBOARD ────────────────────────────────────────────────────────────────
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){
+    if(document.getElementById('confirm-modal').classList.contains('open'))closeConfirm();
+    else if(document.getElementById('upload-modal').classList.contains('open'))closeUpload();
+    else if(document.getElementById('reader-view').classList.contains('open'))closeReader();
+    else if(document.getElementById('detail-view').classList.contains('open'))closeDetail();
+  }
+  if(document.getElementById('reader-view').classList.contains('open')){
+    if(e.key==='ArrowRight'||e.key==='ArrowDown')nextChapter();
+    if(e.key==='ArrowLeft'||e.key==='ArrowUp')prevChapter();
+  }
+});
+
+init();
+</script>
+</body>
+</html>
